@@ -1,0 +1,31 @@
+name: mini-mistral-rag
+services:
+  api:
+    profiles: ["api"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file: .env
+    environment:
+      VESPA_URL: http://vespa:8080
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      vespa:
+        condition: service_healthy
+  vespa:
+    image: vespaengine/vespa:8
+    hostname: vespa-container
+    ports:
+      - "127.0.0.1:8085:8080"
+      - "127.0.0.1:19075:19071"
+    volumes:
+      - vespa-data:/opt/vespa/var
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:19071/state/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+volumes:
+  vespa-data:

@@ -1,0 +1,35 @@
+@vespa = http://localhost:8085
+@config = http://localhost:19075
+@api = http://localhost:8000/api/v1
+
+### Etat du serveur de configuration
+GET {{config}}/state/v1/health
+
+### 1. Indexer une offre via FastAPI (necessite MISTRAL_API_KEY ; appel embeddings facture)
+# Demarrer l'API avec : uv run --locked python -m uvicorn app.main:app --reload
+POST {{api}}/documents
+Content-Type: application/json
+
+{
+  "title": "Offre developpeur IA Python",
+  "text": "Nous recrutons un developpeur Python maitrisant FastAPI, Mistral, les embeddings et le retrieval RAG. Teletravail : trois jours par semaine. Experience : deux ans."
+}
+
+### 2. Consulter les 20 premiers passages indexes (lecture seule, sans appel Mistral)
+POST {{vespa}}/search/
+Content-Type: application/json
+
+{
+  "yql": "select id, title, content, source_id, locator from job_chunks where true",
+  "ranking": "unranked",
+  "hits": 20
+}
+
+### 3. Poser une question sur les passages (appels Mistral factures)
+POST {{api}}/ask
+Content-Type: application/json
+
+{
+  "question": "Quelles competences sont demandees et combien de jours de teletravail sont proposes ?",
+  "top_k": 3
+}
