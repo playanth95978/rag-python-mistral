@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #fffdf9;
+  --color-panel: #f5f3ee;
+  --color-ink: #292722;
+  --color-muted: #827b70;
+  --color-line: #e6e1d7;
+  --color-accent: #f47719;
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply m-0 bg-canvas font-sans text-ink antialiased;
+  }
+  button,
+  a,
+  input,
+  textarea {
+    @apply focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent;
+  }
+  button {
+    @apply cursor-pointer disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  ::selection {
+    background: #ffe0bc;
+  }
+}
+
+@layer components {
+  .button {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm transition-colors hover:bg-panel disabled:hover:bg-white;
+  }
+  .icon-button {
+    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-black/5;
+  }
+  .markdown {
+    @apply text-[15px] leading-7 break-words;
+  }
+  .markdown p {
+    @apply mb-4 last:mb-0;
+  }
+  .markdown h1 {
+    @apply mt-6 mb-3 text-2xl font-semibold;
+  }
+  .markdown h2 {
+    @apply mt-5 mb-3 text-xl font-semibold;
+  }
+  .markdown h3 {
+    @apply mt-4 mb-2 text-lg font-semibold;
+  }
+  .markdown ul {
+    @apply mb-4 list-disc space-y-1 pl-5;
+  }
+  .markdown ol {
+    @apply mb-4 list-decimal space-y-1 pl-5;
+  }
+  .markdown pre {
+    @apply my-4 overflow-x-auto rounded-xl border border-line bg-panel p-4 text-[13px] leading-6;
+  }
+  .markdown :not(pre) > code {
+    @apply rounded bg-panel px-1 py-0.5 text-[13px];
+  }
+  .markdown a {
+    @apply text-orange-700 underline underline-offset-4;
+  }
+  .markdown blockquote {
+    @apply my-4 border-l-2 border-accent pl-4 text-muted;
+  }
+  .markdown table {
+    @apply my-4 block max-w-full overflow-x-auto text-sm;
+  }
+  .markdown th,
+  .markdown td {
+    @apply border border-line px-3 py-2 text-left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

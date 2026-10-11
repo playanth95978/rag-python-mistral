@@ -37,13 +37,24 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
     static = Path(__file__).parent / "static"
     app.mount("/static", StaticFiles(directory=static), name="static")
 
+    async def frontend_page():
+        index = static / "ui" / "index.html"
+        if not index.exists():
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": "Compiler le frontend : npm --prefix frontend ci puis npm --prefix frontend run build."
+                },
+            )
+        return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
     @app.get("/", include_in_schema=False)
     async def chat_page():
-        return FileResponse(static / "index.html")
+        return await frontend_page()
 
     @app.get("/admin/vespa", include_in_schema=False)
     async def vespa_admin_page():
-        return FileResponse(static / "vespa.html")
+        return await frontend_page()
 
     app.include_router(vespa_admin.router, prefix="/api/v1")
 

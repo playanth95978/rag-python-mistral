@@ -21,7 +21,7 @@ def test_conversation_preserves_history_without_retrieval():
     services = Services(None, None, None, ChatService(llm, "mistral-large-4"))
     with TestClient(create_app(services, Settings(_env_file=None))) as client:
         assert client.get("/").status_code == 200
-        assert client.get("/static/chat.js").status_code == 200
+        assert 'id="root"' in client.get("/").text
         history = [
             {"role": "user", "content": "Je m'appelle Alice."},
             {"role": "assistant", "content": "Bonjour Alice !"},

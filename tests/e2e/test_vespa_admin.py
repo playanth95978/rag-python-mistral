@@ -40,7 +40,7 @@ def test_explorer_browse_detail_and_read_only_contract():
     app.dependency_overrides[get_explorer] = lambda: VespaExplorer(upstream)
     with TestClient(app) as client:
         assert client.get("/admin/vespa").status_code == 200
-        assert client.get("/static/vespa.js").status_code == 200
+        assert 'id="root"' in client.get("/admin/vespa").text
         base = "/api/v1/admin/vespa"
         assert len(client.get(base + "/collections").json()["collections"]) == 2
         result = client.get(base + "/cv_user/documents", params={"query": "Python", "offset": 20})

@@ -5,3 +5,5 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .idea/
+frontend/node_modules/
+app/static/ui/
