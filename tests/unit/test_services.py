@@ -64,3 +64,48 @@ def test_empty_retrieval_does_not_call_llm():
 
 def test_kv_cache():
     assert run_demo() == (10, 4)
+
+
+def test_job_ingestion_indexes_offers_with_stable_ids_and_counts_failures():
+    from datetime import datetime
+
+    from app.core.exceptions import MistralUnavailable
+    from app.domain.models.document import IngestionResult
+    from app.domain.models.job_offer import JobOffer
+    from app.services.jobs.job_ingestion_service import JobIngestionService
+
+    offers = [
+        JobOffer(
+            source="EMPLOI_NC",
+            source_id="u1",
+            title="Comptable",
+            description="Tenue des comptes",
+            company="ACME",
+            location="Nouméa",
+            published_at=datetime(2026, 10, 1),
+        ),
+        JobOffer(source="ADZUNA", source_id="a2", title="Dev", description="Java"),
+    ]
+
+    class FakeSearch:
+        async def search(self, *args):
+            return offers
+
+    class FakeIngestion:
+        def __init__(self):
+            self.documents = []
+
+        async def ingest_document(self, document):
+            self.documents.append(document)
+            if document.source_id.startswith("ADZUNA"):
+                raise MistralUnavailable()
+            return IngestionResult(document_id=document.id, chunks=1)
+
+    ingestion = FakeIngestion()
+    result = asyncio.run(JobIngestionService(FakeSearch(), ingestion).ingest("comptable"))
+
+    assert (result.fetched, result.indexed, result.chunks, result.failed) == (2, 1, 1, 1)
+    first = ingestion.documents[0]
+    assert first.source_id == "EMPLOI_NC:u1"
+    assert "Lieu : Nouméa" in first.text and "Publiee le : 2026-10-01" in first.text
+    assert first.text.endswith("Tenue des comptes")

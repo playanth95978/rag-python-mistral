@@ -17,6 +17,7 @@ from app.services.generation.chat_service import ChatService
 from app.services.generation.rag_service import RAGService
 from app.services.ingestion.indexing_service import IndexingService
 from app.services.ingestion.ingestion_service import IngestionService
+from app.services.jobs.job_ingestion_service import JobIngestionService
 from app.services.jobs.job_search_service import JobSearchService
 from app.services.retrieval.retrieval_service import RetrievalService
 
@@ -32,13 +33,16 @@ async def build_services(settings: Settings) -> AsyncIterator[Services]:
         retrieval = RetrievalService(store)
         jobs_http = httpx.AsyncClient(timeout=30)
         resources.push_async_callback(jobs_http.aclose)
+        ingestion = IngestionService(MistralChunkingAdapter(), IndexingService(embeddings, store))
+        jobs = JobSearchService([AdzunaProvider(jobs_http, settings), EmploiNcProvider(jobs_http)])
         yield Services(
-            ingestion=IngestionService(MistralChunkingAdapter(), IndexingService(embeddings, store)),
+            ingestion=ingestion,
             retrieval=retrieval,
             rag=RAGService(retrieval, MistralLLMAdapter(client)),
             chat=ChatService(
                 MistralLLMAdapter(client, settings.mistral_direct_chat_model, max_tokens=4096),
                 settings.mistral_direct_chat_model,
             ),
-            jobs=JobSearchService([AdzunaProvider(jobs_http, settings), EmploiNcProvider(jobs_http)]),
+            jobs=jobs,
+            job_ingestion=JobIngestionService(jobs, ingestion),
         )

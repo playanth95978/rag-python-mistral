@@ -17,3 +17,17 @@ class JobOfferResponse(BaseModel):
     salary_max: int | None
     published_at: datetime | None
     remote: bool
+
+
+class JobIngestionRequest(BaseModel):
+    keywords: str | None = None
+    location: str | None = None
+    country: str | None = None
+    sources: list[str] | None = None
+
+
+class JobIngestionResponse(BaseModel):
+    fetched: int
+    indexed: int
+    chunks: int
+    failed: int

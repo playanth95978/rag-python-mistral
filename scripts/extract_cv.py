@@ -6,6 +6,7 @@ from app.domain.interfaces.embeddings import EmbeddingBatch
 from app.domain.models.document import Document
 from app.infrastructure.mistral.client import MistralClient
 from app.infrastructure.mistral.embedding_adapter import MistralEmbeddingAdapter
+from app.infrastructure.vector_store.vespa_adapter import VespaAdapter
 
 path: Path = Path("scripts/cv.txt")
 
