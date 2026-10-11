@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1.routers import chat, conversation, documents, health
+from app.api.v1.routers import chat, conversation, documents, health, jobs
 from app.bootstrap import build_services
 from app.core.config import Settings
 from app.core.exceptions import ApplicationError
@@ -38,6 +38,7 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
         return FileResponse(static / "index.html")
 
     app.include_router(conversation.router, prefix="/api/v1")
+    app.include_router(jobs.router, prefix="/api/v1")
 
     @app.exception_handler(ApplicationError)
     async def application_error(request: Request, error: ApplicationError):

@@ -79,3 +79,27 @@ def test_errors_are_translated_only_at_http_boundary():
         result = client.post("/api/v1/documents", json={"title": "A", "text": "Python"})
         assert result.status_code == 503
         assert result.json()["detail"] == VectorStoreUnavailable.detail
+
+
+def test_jobs_aggregates_providers_and_filters_by_source():
+    from app.domain.models.job_offer import JobOffer
+    from app.services.jobs.job_search_service import JobSearchService
+
+    class FakeProvider:
+        def __init__(self, source):
+            self.source = source
+
+        def supports(self, url):
+            return False
+
+        async def fetch_jobs(self, keywords=None, location=None, country=None):
+            return [JobOffer(source=self.source, source_id="1", title=keywords or "", description="d")]
+
+    jobs = JobSearchService([FakeProvider("ADZUNA"), FakeProvider("EMPLOI_NC")])
+    services = Services(None, None, None, jobs=jobs)
+    with TestClient(create_app(services, Settings(_env_file=None))) as client:
+        both = client.get("/api/v1/jobs", params={"keywords": "java"}).json()
+        assert [o["source"] for o in both] == ["ADZUNA", "EMPLOI_NC"]
+        assert both[0]["title"] == "java"
+        only = client.get("/api/v1/jobs", params={"source": "emploi_nc"}).json()
+        assert [o["source"] for o in only] == ["EMPLOI_NC"]

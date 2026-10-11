@@ -3,7 +3,10 @@
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import AsyncIterator
 
+import httpx
+
 from app.core.config import Settings
+from app.infrastructure.job_providers import AdzunaProvider, EmploiNcProvider
 from app.infrastructure.mistral.chunking_adapter import MistralChunkingAdapter
 from app.infrastructure.mistral.client import MistralClient
 from app.infrastructure.mistral.embedding_adapter import MistralEmbeddingAdapter
@@ -14,6 +17,7 @@ from app.services.generation.chat_service import ChatService
 from app.services.generation.rag_service import RAGService
 from app.services.ingestion.indexing_service import IndexingService
 from app.services.ingestion.ingestion_service import IngestionService
+from app.services.jobs.job_search_service import JobSearchService
 from app.services.retrieval.retrieval_service import RetrievalService
 
 
@@ -26,6 +30,8 @@ async def build_services(settings: Settings) -> AsyncIterator[Services]:
         store = VespaAdapter(embeddings, settings.vespa_url)
         resources.push_async_callback(store.aclose)
         retrieval = RetrievalService(store)
+        jobs_http = httpx.AsyncClient(timeout=30)
+        resources.push_async_callback(jobs_http.aclose)
         yield Services(
             ingestion=IngestionService(MistralChunkingAdapter(), IndexingService(embeddings, store)),
             retrieval=retrieval,
@@ -34,4 +40,5 @@ async def build_services(settings: Settings) -> AsyncIterator[Services]:
                 MistralLLMAdapter(client, settings.mistral_direct_chat_model, max_tokens=4096),
                 settings.mistral_direct_chat_model,
             ),
+            jobs=JobSearchService([AdzunaProvider(jobs_http, settings), EmploiNcProvider(jobs_http)]),
         )
