@@ -1,0 +1,33 @@
+# ANTHONY ATTIA
+**Senior Software Engineer | Full Stack Developer | AI Engineer | Technical Lead**
+
+Sydney, Australia
+Phone: +61 432 091 726
+Email: anthony.attia1@gmail.com
+LinkedIn: https://linkedin.com/in/anthony-attia-574a7294/
+Portfolio: https://cv.aicarreerfinder.com
+
+## PROFESSIONAL SUMMARY
+
+Senior Software Engineer and Technical Lead with over 11 years of experience designing, developing and modernising enterprise applications.
+
+Strong expertise in Java, Spring Boot, Angular, TypeScript, REST APIs, microservices and distributed systems, with hands-on experience in generative AI, Retrieval-Augmented Generation (RAG), semantic search and LLM integration.
+
+Experienced in building scalable backend services, modern web applications, secure enterprise platforms and AI-powered solutions.
+
+Comfortable taking ownership of the full software development lifecycle, from architecture and technical design to implementation, testing, deployment and production support.
+
+## TECHNICAL SKILLS
+
+**Backend Development**
+- Java 8–21, Spring Boot, Spring Framework
+- Spring Security, Spring Batch, Spring Data JPA
+- REST APIs, microservices, event-driven architecture
+- Kafka, Hibernate, JPA
+- Python, FastAPI
+- Node.js, TypeScript, Express.js
+
+**Frontend Development**
+- Angular, AngularJS, TypeScript
+- JavaScript, HTML5, CSS3
+- Angular
