@@ -249,6 +249,16 @@ aux tests pour éviter que d'autres documents affectent leur classement.
 - [Prompt caching](https://docs.mistral.ai/studio/conversations/advanced/prompt-caching)
 # Interface de conversation
 
+## Explorateur Vespa
+
+Ouvrir `/admin/vespa` sur le serveur FastAPI (par exemple http://127.0.0.1:8001/admin/vespa).
+La page HTML/JavaScript permet de consulter `cv_user` et `job_chunks`, leurs nombres de morceaux,
+les textes, métadonnées et embeddings. La recherche est lexicale, sans appel Mistral.
+L’API `/api/v1/admin/vespa` est en lecture seule et limite les collections à ces deux schémas.
+La pagination affiche 20 morceaux par page, jusqu’à un offset de 1 000.
+Cet explorateur local ne dispose pas d’authentification ; conserver le serveur sur l’adresse loopback.
+
+
 Ouvrir http://127.0.0.1:8000/ après avoir lancé `uv run uvicorn app.main:app --reload`.
 La page HTML/CSS/JavaScript propose un chat classique avec historique local, plusieurs conversations,
 copie des réponses et blocs de code. Entrée envoie le message ; Maj+Entrée ajoute une ligne.

@@ -1,9 +1,12 @@
 import asyncio
 import os
+from uuid import uuid4
 
 import pytest
 
 from app.core.config import Settings
+from app.domain.models.chunk import Chunk
+from app.domain.models.document import Document
 from app.infrastructure.mistral.chunking_adapter import MistralChunkingAdapter
 from app.infrastructure.vector_store.vespa_adapter import VespaAdapter
 from app.services.generation.rag_service import RAGService
@@ -11,6 +14,35 @@ from app.services.ingestion.indexing_service import IndexingService
 from app.services.ingestion.ingestion_service import IngestionService
 from app.services.retrieval.retrieval_service import RetrievalService
 from tests.fakes import FakeEmbeddings, FakeLLM
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(os.getenv("VESPA_INTEGRATION") != "1", reason="Activer VESPA_INTEGRATION=1")
+def test_cv_collection_is_separate_from_jobs():
+    async def check():
+        embeddings = FakeEmbeddings()
+        endpoint = Settings().vespa_url
+        cvs = VespaAdapter(embeddings, endpoint, collection_name="cv_user")
+        jobs = VespaAdapter(embeddings, endpoint)
+        marker = "cv-isolation-" + str(uuid4())
+        document = Document(marker, "CV test", "Python " + marker)
+        vector = (await embeddings.embed([document.text])).vectors[0]
+        chunk = Chunk(marker, document.title, document.text, 0, len(document.text), vector)
+        try:
+            await cvs.index_document(document, [chunk], 5)
+            for _ in range(50):
+                hits = await cvs.search(document.text, 100)
+                if any(hit.source_id == marker for hit in hits):
+                    break
+                await asyncio.sleep(0.2)
+            assert any(hit.source_id == marker for hit in hits)
+            assert all(hit.source_id != marker for hit in await jobs.search(document.text, 100))
+        finally:
+            await cvs.index.delete_document(document.id)
+            await cvs.aclose()
+            await jobs.aclose()
+
+    asyncio.run(check())
 
 
 @pytest.mark.integration

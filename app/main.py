@@ -2,15 +2,17 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1.routers import chat, conversation, documents, health, jobs
+from app.api.v1.routers import chat, conversation, documents, health, jobs, vespa_admin
 from app.bootstrap import build_services
 from app.core.config import Settings
 from app.core.exceptions import ApplicationError
 from app.core.logging import configure_logging
+from app.infrastructure.vector_store.vespa_explorer import VespaExplorer
 from app.services.container import Services
 
 logger = logging.getLogger(__name__)
@@ -21,13 +23,15 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
     async def lifespan(app: FastAPI):
         configured = settings or Settings()
         configure_logging(configured.log_level)
-        if services is not None:
-            app.state.services = services
-            yield
-        else:
-            async with build_services(configured) as dependencies:
-                app.state.services = dependencies
+        async with httpx.AsyncClient(base_url=configured.vespa_url, timeout=20) as vespa_http:
+            app.state.vespa_explorer = VespaExplorer(vespa_http)
+            if services is not None:
+                app.state.services = services
                 yield
+            else:
+                async with build_services(configured) as dependencies:
+                    app.state.services = dependencies
+                    yield
 
     app = FastAPI(title="Mistral RAG", version="0.2.0", lifespan=lifespan)
     static = Path(__file__).parent / "static"
@@ -36,6 +40,12 @@ def create_app(services: Services | None = None, settings: Settings | None = Non
     @app.get("/", include_in_schema=False)
     async def chat_page():
         return FileResponse(static / "index.html")
+
+    @app.get("/admin/vespa", include_in_schema=False)
+    async def vespa_admin_page():
+        return FileResponse(static / "vespa.html")
+
+    app.include_router(vespa_admin.router, prefix="/api/v1")
 
     app.include_router(conversation.router, prefix="/api/v1")
     app.include_router(jobs.router, prefix="/api/v1")

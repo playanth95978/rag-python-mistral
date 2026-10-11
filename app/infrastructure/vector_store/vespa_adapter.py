@@ -28,11 +28,13 @@ class ToolkitEmbedder(Embedder):
 
 
 class VespaAdapter:
-    def __init__(self, embeddings: EmbeddingProvider, endpoint: str, index=None):
+    def __init__(
+        self, embeddings: EmbeddingProvider, endpoint: str, index=None, *, collection_name: str = "job_chunks"
+    ):
         if index is None:
             app = VespaApp(PROJECT_ROOT / "vespa_app")
             index = app.get_search_index(
-                VespaClientConfig(endpoint=endpoint, timeout=30), collection_name="job_chunks"
+                VespaClientConfig(endpoint=endpoint, timeout=30), collection_name=collection_name
             )
         self.index = index
         self.embeddings = embeddings

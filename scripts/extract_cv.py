@@ -1,8 +1,9 @@
-from pathlib import Path
 import asyncio
+from pathlib import Path
 
 from app.core.config import Settings
 from app.domain.interfaces.embeddings import EmbeddingBatch
+from app.domain.models.chunk import Chunk
 from app.domain.models.document import Document
 from app.infrastructure.mistral.client import MistralClient
 from app.infrastructure.mistral.embedding_adapter import MistralEmbeddingAdapter
@@ -26,28 +27,48 @@ def chunk_text(text: str, chunk_size: int = 500) -> list[str]:
 
 
 async def main():
-    text:str = extract_text(Path("scripts/cv.txt"))
-    chunks:list[str] = chunk_text(text, chunk_size=500)
+    text: str = extract_text(Path("scripts/cv.txt"))
+    chunks: list[str] = chunk_text(text, chunk_size=500)
 
-    client:MistralClient = MistralClient(Settings())
-    documents = []
+    client: MistralClient = MistralClient(Settings())
 
     try:
-        adapter:MistralEmbeddingAdapter = MistralEmbeddingAdapter(client)
+        adapter: MistralEmbeddingAdapter = MistralEmbeddingAdapter(client)
         batch: EmbeddingBatch = await adapter.embed(chunks)
 
-        for index, (chunk, vector) in enumerate(zip(chunks, batch.vectors, strict=True)):
-            print(f'index:{index}\tchunk:{len(chunk)}\tvector:{len(vector)}')
-            document = {
-                'id': f"cv-{index}",
-                'text': chunk,
-                'embedding': vector,
-            }
-            documents.append(document)
+        cv: Document = Document(
+            source_id="cv-demo",
+            title="Mon CV",
+            text=text,
+        )
 
-        print(documents[0]["id"])
-        print(documents[0]["text"][:80])
-        print(len(documents[0]["embedding"]))
+        vespa_chunks: list[Chunk] = []
+        offset: int = 0
+
+        for chunk, vector in zip(chunks, batch.vectors, strict=True):
+            vespa_chunks.append(
+                Chunk(
+                    source_id=cv.source_id,
+                    title=cv.title,
+                    text=chunk,
+                    start_offset=offset,
+                    end_offset=offset + len(chunk),
+                    embedding=vector,
+                )
+            )
+            offset += len(chunk)
+
+        print(vespa_chunks[0].locator)
+        store: VespaAdapter = VespaAdapter(
+            embeddings=adapter,
+            endpoint=Settings().vespa_url,
+            collection_name="cv_user",
+        )
+        try:
+            await store.index_document(document=cv, chunks=vespa_chunks, total_tokens=batch.total_tokens)
+            print(f"CV indexé dans cv_user : {len(vespa_chunks)} morceaux")
+        finally:
+            await store.aclose()
     finally:
         await client.aclose()
 
